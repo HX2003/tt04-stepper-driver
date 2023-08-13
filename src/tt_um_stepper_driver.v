@@ -12,11 +12,11 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
 );
 
     wire reset = ! rst_n;
-    assign uo_out[7] = 1'b0;
     
     // Dedicated outputs
-    wire [3:0] motor_driver_out = uo_out[3:0];
-    
+    wire [3:0] motor_driver_out;
+    assign uo_out[3:0] = motor_driver_out;
+    assign uo_out[7:4] = 4'b0000;
     // Dedicated inputs
     wire ext_ctrl = ui_in[0];
     
@@ -30,8 +30,7 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
     assign uio_oe[0] = ext_ctrl;
     assign uio_oe[1] = ext_ctrl;
 
-    // put bottom 8 bits of second counter out on the bidirectional gpio
-    //assign uio_out = second_counter[7:0];
+    assign uio_out = 8'b00000000;
 
     reg [32:0] step_pos;
 

@@ -47,7 +47,7 @@ module tb ();
     wire dir_io;
     short short1(dir_io, uio_combined[1]);
     
-    tt_stepper_driver tt_stepper_driver (
+    tt_um_stepper_driver tt_um_stepper_driver (
     // include power ports for the Gate Level test
     `ifdef GL_TEST
         .VPWR( 1'b1),
