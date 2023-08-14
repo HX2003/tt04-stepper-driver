@@ -1,4 +1,4 @@
 
-module short (a, a);
+module short (.ioa(a), .iob(a));
     inout a;
 endmodule
