@@ -41,12 +41,6 @@ module tb ();
     wire ext_ctrl;
     assign ui_in[0] = ext_ctrl;
     
-    // Bidirectional IO
-    wire step_io;
-    short short0(step_io, uio_combined[0]);
-    wire dir_io;
-    short short1(dir_io, uio_combined[1]);
-    
     tt_um_stepper_driver tt_um_stepper_driver (
     // include power ports for the Gate Level test
     `ifdef GL_TEST

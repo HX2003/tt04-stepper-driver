@@ -9,7 +9,7 @@ TOPLEVEL_LANG ?= verilog
 ifneq ($(GATES),yes)
 
 # this is the only part you should need to modify:
-VERILOG_SOURCES += $(PWD)/tb.v $(PWD)/tt_um_stepper_driver.v $(PWD)/full_step_waveform_decoder.v $(PWD)/rising_edge_detector.v $(PWD)/short.v $(PWD)/mul.v 
+VERILOG_SOURCES += $(PWD)/tb.v $(PWD)/tt_um_stepper_driver.v $(PWD)/full_step_waveform_decoder.v $(PWD)/rising_edge_detector.v $(PWD)/mul.v 
 
 else
 

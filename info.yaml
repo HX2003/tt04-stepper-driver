@@ -7,7 +7,6 @@ project:
 # Source files must be in ./src and you must list each source file separately
   source_files:        
     - tt_um_stepper_driver.v
-    - short.v
     - mul.v
     - rising_edge_detector.v
     - full_step_waveform_decoder.v
