@@ -16,7 +16,7 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
     // Dedicated outputs
     wire [3:0] motor_driver_out;
     assign uo_out[3:0] = motor_driver_out;
-    assign uo_out[7:4] = 4'b0000;
+    assign uo_out[7:4] = test_number_c[3:0] + test_number_c[31:28];
     // Dedicated inputs
     wire ext_ctrl = ui_in[0];
     
