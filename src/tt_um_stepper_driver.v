@@ -51,6 +51,8 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
         if (reset) begin
             step_pos <= 0;
             start <= 0;
+            test_number_a <= 0;
+            test_number_b <= 0;
             
         end else begin
             if (io_step_rising)
