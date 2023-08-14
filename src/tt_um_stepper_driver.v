@@ -32,8 +32,16 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
 
     assign uio_out = 8'b00000000;
 
-    reg [32:0] step_pos;
-
+    reg [31:0] step_pos;
+    
+    reg [31:0] test_number_a;
+    reg [31:0] test_number_b;
+    wire [31:0] test_number_c;
+    
+    reg start;
+    wire busy;
+    
+    mul mul(.clk(clk), .rst(reset), .in_a(test_number_a), .in_b(test_number_b), .out(test_number_c), .start(start), .busy(busy));
     // if external inputs are set then use that as compare count
     // otherwise use the hard coded MAX_COUNT
     //wire [23:0] compare = ui_in == 0 ? MAX_COUNT: {16'b0, ui_in[7:0]};
@@ -42,6 +50,8 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
         // if reset, set counter to 0
         if (reset) begin
             step_pos <= 0;
+            start <= 0;
+            
         end else begin
             if (io_step_rising)
                 step_pos <= step_pos + 1;
