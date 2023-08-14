@@ -34,6 +34,8 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
 
     reg [31:0] step_pos;
     
+    reg [31:0] counter;
+    
     reg [31:0] test_number_a;
     reg [31:0] test_number_b;
     wire [31:0] test_number_c;
@@ -53,10 +55,19 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
             start <= 0;
             test_number_a <= 0;
             test_number_b <= 0;
+            counter <= 0;
             
         end else begin
             if (io_step_rising)
                 step_pos <= step_pos + 1;
+                
+            counter <= counter + 1'b1;
+            
+            if (counter == 100) begin
+                test_number_a <= 99;
+                test_number_b <= 87;
+                start <= 1;
+            end
             /*// if up to 16e6
             if (second_counter == compare) begin
                 // reset

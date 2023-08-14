@@ -24,9 +24,9 @@ async def test_7seg(dut):
     await ClockCycles(dut.clk, 10)
     dut.rst_n.value = 1
     
-    dut.tt_um_stepper_driver.test_number_a.value = 99
-    dut.tt_um_stepper_driver.test_number_b.value = 87
-    dut.tt_um_stepper_driver.start.value = 1
+    #dut.tt_um_stepper_driver.test_number_a.value = 99
+    #dut.tt_um_stepper_driver.test_number_b.value = 87
+    #dut.tt_um_stepper_driver.start.value = 1
 
     max_count = dut.ui_in.value
     dut._log.info(f"check all segments with MAX_COUNT set to {max_count}")
