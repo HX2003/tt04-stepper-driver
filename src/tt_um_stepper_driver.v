@@ -42,7 +42,7 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
     reg start;
     wire busy;
     
-    mul divide(.clk(clk), .rst(reset), .dividend(test_number_a), .divisor(test_number_b), .ready(busy), .quotient(test_number_c), .start(start));
+    div32x32 div32x32(.clk(clk), .rst(reset), .dividend(test_number_a), .divisor(test_number_b), .ready(busy), .quotient(test_number_c), .start(start));
     //mul mul(.clk(clk), .rst(reset), .in_a(test_number_a), .in_b(test_number_b), .out(test_number_c), .start(start), .busy(busy));
     // if external inputs are set then use that as compare count
     // otherwise use the hard coded MAX_COUNT
@@ -63,11 +63,11 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
                 
             counter <= counter + 1'b1;
             
-            if (counter == 100) begin
+            /*if (counter == 100) begin
                 test_number_a <= 7;
                 test_number_b <= 3;
                 start <= 1;
-            end
+            end*/
             
             if (counter == 150) begin
                 start <= 0;

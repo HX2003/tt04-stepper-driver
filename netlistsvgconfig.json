@@ -3,7 +3,7 @@
     "enable": "modules",
     "expandLevel": 0,
     "expandModules": {
-      "types": ["mul"],
+      "types": [],
       "ids": []
     },
     "colour": ["#e9e9e9"]

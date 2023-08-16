@@ -1,46 +1,4 @@
-/*module mul #(parameter N_one_bitS=32) (
-    input wire clk,
-    input wire rst,
-    input wire [N_one_bitS-1:0] in_a,
-    input wire [N_one_bitS-1:0] in_b,
-    input wire start,
-    output reg busy,
-    output reg [N_one_bitS-1:0] out
-);
-
-wire start_rising;
-reg [N_one_bitS-1:0] a;
-reg [N_one_bitS-1:0] b;
-
-rising_edge_detector rising_edge_detector0(.in(start), .clk(clk), .out(start_rising));
-
-always @(posedge clk) begin
-    if(rst) begin
-        busy <= 0;
-    end
-    
-    if(start_rising) begin
-    	a <= in_a;
-    	b <= in_b;
-    	out <= 0;
-    	busy <= 1;
-    end
-    
-    if(busy) begin
-	if (b[0])
-	    out <= out + a;
-
-	// Shift right	
-	b <= b >> 1;
-
-	// Shift left discard upper one_bits
-	a <= a << 1;
-    end
-end
-
-endmodule*/
-
-module mul(
+module div32x32(
 input wire clk,
 input wire rst,
 input wire [31:0] dividend, 
