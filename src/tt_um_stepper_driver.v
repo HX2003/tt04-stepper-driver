@@ -39,11 +39,11 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
     reg [31:0] test_number_a;
     reg [31:0] test_number_b;
     wire [31:0] test_number_c;
-    
     reg start;
     wire busy;
     
-    mul mul(.clk(clk), .rst(reset), .in_a(test_number_a), .in_b(test_number_b), .out(test_number_c), .start(start), .busy(busy));
+    mul divide(.clk(clk), .rst(reset), .dividend(test_number_a), .divisor(test_number_b), .ready(busy), .quotient(test_number_c), .start(start));
+    //mul mul(.clk(clk), .rst(reset), .in_a(test_number_a), .in_b(test_number_b), .out(test_number_c), .start(start), .busy(busy));
     // if external inputs are set then use that as compare count
     // otherwise use the hard coded MAX_COUNT
     //wire [23:0] compare = ui_in == 0 ? MAX_COUNT: {16'b0, ui_in[7:0]};
@@ -64,8 +64,18 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
             counter <= counter + 1'b1;
             
             if (counter == 100) begin
-                test_number_a <= 99;
-                test_number_b <= 87;
+                test_number_a <= 7;
+                test_number_b <= 3;
+                start <= 1;
+            end
+            
+            if (counter == 150) begin
+                start <= 0;
+            end
+            
+            if (counter == 200) begin
+                test_number_a <= 200000;
+                test_number_b <= counter;
                 start <= 1;
             end
             /*// if up to 16e6
