@@ -1,33 +1,29 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Description: SPI (Serial Peripheral Interface) Slave
-//              Creates slave based on input configuration.
-//              Receives a byte one bit at a time on MOSI
-//              Will also push out byte data one bit at a time on MISO.  
-//              Any data on input byte will be shipped out on MISO.
-//              Supports multiple bytes per transaction when CS_n is kept 
-//              low during the transaction.
+//              Uses 40 bit data frames. Where the most significant 8 bits are
+//              for the address. Write access involves setting the most
+//              significant bit of the address byte to 1, while read access
+//              involves setting the most significant bit of the address byte
+//              to 0. The remaining 32 bits are for the data. Ensure that CS_n
+//              is kept low during the whole transaction.
 //
-// Note:        i_Clk must be at least 4x faster than i_SPI_Clk
+// Note:        clk must be at least 4x faster than i_SPI_Clk
 //              MISO should be tri-stated when not communicating.  Allows for multiple
 //              SPI Slaves on the same interface.
 //
-// Parameters:  SPI_MODE, can be 0, 1, 2, or 3.  See above.
-//              Can be configured in one of 4 modes:
-//              Mode | Clock Polarity (CPOL/CKP) | Clock Phase (CPHA)
-//               0   |             0             |        0
-//               1   |             0             |        1
-//               2   |             1             |        0
-//               3   |             1             |        1
-//              More info: https://en.wikipedia.org/wiki/Serial_Peripheral_Interface_Bus#Mode_numbers
 ///////////////////////////////////////////////////////////////////////////////
 
 module spi_slave
   (
    // Control/Data Signals,
    input            i_Rst_L,    // FPGA Reset, active low
-   input            i_Clk,      // FPGA Clock
+   input clk,      // FPGA Clock
+   output reg [31:0] spi_reg_0,
+   output reg [31:0] spi_reg_1,
+   output reg [31:0] spi_reg_2,
+   output reg [31:0] spi_reg_3,
+   
    output reg       o_RX_DV,    // Data Valid pulse (1 clock cycle)
-   output reg [7:0] o_RX_Byte,  // Byte received on MOSI
    input            i_TX_DV,    // Data Valid pulse to register i_TX_Byte
    input  [7:0]     i_TX_Byte,  // Byte to serialize to MISO.
 
@@ -42,40 +38,46 @@ module spi_slave
   // SPI Interface (All Runs at SPI Clock Domain)
   wire w_SPI_Clk;  // Inverted/non-inverted depending on settings
   
-  reg [2:0] r_RX_Bit_Count;
-  reg [2:0] r_TX_Bit_Count;
-  reg [7:0] r_Temp_RX_Byte;
-  reg [7:0] r_RX_Byte;
+  reg [7:0] address;
+  
+  reg [$clog2(40):0] rx_tx_bits_count; 
+  reg [7:0] rx_address_bits;
+  reg [31:0] rx_data_bits;
+
   reg r_RX_Done, r2_RX_Done, r3_RX_Done;
-  reg [7:0] r_TX_Byte;
   reg r_SPI_MISO_Bit;
 
+wire spi_cs_falling;
+falling_edge_detector falling_edge_detector_spi_cs(.in(i_SPI_CS_n), .clk(clk), .out(spi_cs_falling));
 
   assign w_SPI_Clk = i_SPI_Clk;
 
 
   // Purpose: Recover SPI Byte in SPI Clock Domain
   // Samples line on correct edge of SPI Clock
-  always @(posedge w_SPI_Clk)
-  begin
-    if (i_SPI_CS_n)
-    begin
-      r_RX_Bit_Count <= 0;
-      r_RX_Done      <= 1'b0;
+always @(posedge clk) begin
+    if (spi_cs_falling) begin
+        rx_tx_bits_count <= 40;
+        r_RX_Done      <= 1'b0;
     end
-    else
-    begin
-      r_RX_Bit_Count <= r_RX_Bit_Count + 1;
+end
+  
+always @(posedge w_SPI_Clk) begin
+    if (!i_SPI_CS_n) begin
+      rx_tx_bits_count <= rx_tx_bits_count - 1;
 
       // Receive in LSB, shift up to MSB
-      r_Temp_RX_Byte <= {r_Temp_RX_Byte[6:0], i_SPI_MOSI};
+      if(rx_tx_bits_count > 32) begin
+          rx_address_bits <= {rx_address_bits[6:0], i_SPI_MOSI};
+      end else begin
+          rx_data_bits <= {rx_data_bits[30:0], i_SPI_MOSI};
+      end
     
-      if (r_RX_Bit_Count == 3'b111)
+      if (rx_tx_bits_count == 0)
       begin
         r_RX_Done <= 1'b1;
-        r_RX_Byte <= {r_Temp_RX_Byte[6:0], i_SPI_MOSI};
       end
-      else if (r_RX_Bit_Count == 3'b010)
+      else if (rx_tx_bits_count == 2)
       begin
         r_RX_Done <= 1'b0;        
       end
@@ -87,17 +89,23 @@ module spi_slave
 
   // Purpose: Cross from SPI Clock Domain to main FPGA clock domain
   // Assert o_RX_DV for 1 clock cycle when o_RX_Byte has valid data.
-  always @(posedge i_Clk or negedge i_Rst_L)
+  always @(posedge clk or negedge i_Rst_L)
   begin
     if (~i_Rst_L)
     begin
       r2_RX_Done <= 1'b0;
       r3_RX_Done <= 1'b0;
       o_RX_DV    <= 1'b0;
-      o_RX_Byte  <= 8'h00;
-      r_TX_Bit_Count <= 3'b000;
-      r_TX_Byte <= 8'h00;
       r_SPI_MISO_Bit <= 0;
+      
+      rx_tx_bits_count <= 0;
+      rx_address_bits <= 0;
+      rx_data_bits <= 0;
+      // Default register values
+      spi_reg_0 <= 1234567;
+      spi_reg_1 <= 2345678;
+      spi_reg_2 <= 3456789;
+      spi_reg_3 <= 4567890;
     end
     else
     begin
@@ -110,7 +118,7 @@ module spi_slave
       if (r3_RX_Done == 1'b0 && r2_RX_Done == 1'b1) // rising edge
       begin
         o_RX_DV   <= 1'b1;  // Pulse Data Valid 1 clock cycle
-        o_RX_Byte <= r_RX_Byte;
+        //o_RX_Byte <= r_RX_Byte;
       end
       else
       begin
@@ -122,28 +130,46 @@ module spi_slave
   // Purpose: Transmits 1 SPI Byte whenever SPI clock is toggling
   // Will transmit read data back to SW over MISO line.
   // Want to put data on the line immediately when CS goes low.
-  always @(posedge w_SPI_Clk)
-  begin
-    if (i_SPI_CS_n)
-    begin
-      r_TX_Bit_Count <= 3'b111;  // Send MSb first
-      r_SPI_MISO_Bit <= r_TX_Byte[7];  // Reset to MSb // Is this needed? HX2003
+always @(posedge clk) begin
+    if (spi_cs_falling) begin
+        //r_SPI_MISO_Bit <= r_TX_Byte[7];  // Reset to MSb // Is this needed? HX2003
     end
-    else
+end
+  
+ always @(posedge w_SPI_Clk)
+ begin
+    if (!i_SPI_CS_n)
     begin
-      r_TX_Bit_Count <= r_TX_Bit_Count - 1;
 
-      // Here is where data crosses clock domains from i_Clk to w_SPI_Clk
+      // Here is where data crosses clock domains from clk to w_SPI_Clk
       // Can set up a timing constraint with wide margin for data path.
-      r_SPI_MISO_Bit <= r_TX_Byte[r_TX_Bit_Count];
-
+      //r_SPI_MISO_Bit <= r_TX_Byte[r_TX_Bit_Count];
+      if(rx_tx_bits_count > 32) begin
+          r_SPI_MISO_Bit <= 1'b1;
+      end else begin
+      case(rx_address_bits)
+          0: begin
+             r_SPI_MISO_Bit <= spi_reg_0[rx_tx_bits_count]; 
+          end
+          1: begin
+             r_SPI_MISO_Bit <= spi_reg_1[rx_tx_bits_count]; 
+          end
+          2: begin
+             r_SPI_MISO_Bit <= spi_reg_2[rx_tx_bits_count]; 
+          end
+          3: begin
+             r_SPI_MISO_Bit <= spi_reg_3[rx_tx_bits_count]; 
+          end
+          default: r_SPI_MISO_Bit <= 1'b1;
+        endcase
+        end
     end // else: !if(i_SPI_CS_n)
   end // always @ (negedge w_SPI_Clk or posedge i_SPI_CS_n_SW)
 
-
+/*
   // Purpose: Register TX Byte when DV pulse comes.  Keeps registed byte in 
   // this module to get serialized and sent back to master.
-  always @(posedge i_Clk or negedge i_Rst_L)
+  always @(posedge clk or negedge i_Rst_L)
   begin
     if (~i_Rst_L)
     begin
@@ -156,7 +182,7 @@ module spi_slave
         r_TX_Byte <= i_TX_Byte; 
       end
     end // else: !if(~i_Rst_L)
-  end // always @ (posedge i_Clk or negedge i_Rst_L)
+  end // always @ (posedge clk or negedge i_Rst_L)*/
 
   assign o_SPI_MISO = r_SPI_MISO_Bit;
 

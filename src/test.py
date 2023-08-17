@@ -22,7 +22,7 @@ async def test_7seg(dut):
     )
 
     spi_config = SpiConfig(
-        word_width = 8,
+        word_width = 40,
         sclk_freq  = 20,
         cpol       = False,
         cpha       = False,
@@ -47,7 +47,10 @@ async def test_7seg(dut):
     #dut.tt_um_stepper_driver.start.value = 1
     
     await ClockCycles(dut.clk, 36)
-    spi_master.write_nowait([34])
+    spi_reg_addr = 56;
+    spi_write_data = 2815324;
+    spi_frame = spi_reg_addr << 32 or spi_write_data;
+    spi_master.write_nowait([spi_frame])
     
     #assert int(dut.tt_um_stepper_driver.test_number_c.value) == 7658
     max_count = dut.ui_in.value

@@ -28,7 +28,7 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
     wire spi_miso;
     assign uio_out[1] = spi_miso;
     //Tri-state MISO when CS is high.  Allows for multiple slaves to talk.
-    assign uio_oe[1] = ~spi_cs;
+    assign uio_oe[1] = !spi_cs;
     
     wire spi_clk = uio_in[2];
     assign uio_out[2] = 1'b0;
@@ -61,7 +61,12 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
     wire start;
     assign start = counter[7];
     wire busy;
-    
+
+wire [31:0] spi_reg_0;
+wire [31:0] spi_reg_1;
+wire [31:0] spi_reg_2;
+wire [31:0] spi_reg_3;
+
 wire w_Slave_RX_DV, r_Slave_TX_DV;
 wire [7:0] w_Slave_RX_Byte, r_Slave_TX_Byte;
 
@@ -69,9 +74,12 @@ spi_slave spi_slave
 (
     // Control/Data Signals,
     .i_Rst_L(rst_n),      // FPGA Reset Active Low
-    .i_Clk(clk),          // FPGA Clock
+    .clk(clk),          // FPGA Clock
+    .spi_reg_0(spi_reg_0),
+    .spi_reg_1(spi_reg_1),
+    .spi_reg_2(spi_reg_2),
+    .spi_reg_3(spi_reg_3),
     .o_RX_DV(w_Slave_RX_DV),      // Data Valid pulse (1 clock cycle)
-    .o_RX_Byte(w_Slave_RX_Byte),  // Byte received on MOSI
     .i_TX_DV(w_Slave_RX_DV),      // Data Valid pulse
     .i_TX_Byte(w_Slave_RX_Byte),  // Byte to serialize to MISO (set up for loopback)
 

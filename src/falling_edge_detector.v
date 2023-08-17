@@ -1,4 +1,4 @@
-module rising_edge_detector(
+module falling_edge_detector(
     input wire in,
     input wire clk,
     output wire out
@@ -10,6 +10,6 @@ module rising_edge_detector(
         in_d <= in;
     end
 
-    assign out = in && !in_d;
+    assign out = !in && in_d;
 endmodule
 

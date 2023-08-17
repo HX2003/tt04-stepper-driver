@@ -14,7 +14,7 @@ module mul #(parameter N=16) (
 wire start_rising;
 reg [N*2-1:0] a;
 reg [N-1:0] b;
-reg [5:0]  count;
+reg [$clog2(N):0] count;
 
 assign busy = start || count > 0;
 
