@@ -8,6 +8,8 @@ project:
   source_files:        
     - tt_um_stepper_driver.v
     - mul.v
+    - spi_slave.v
+    - step_gen.v
     - div32x32.v
     - rising_edge_detector.v
     - full_step_waveform_decoder.v

@@ -23,8 +23,17 @@ module tb ();
     wire  [7:0] uo_out;
     wire  [7:0] uio_in;
     wire  [7:0] uio_out;
-    wire  [7:0] uio_oe;         
-
+    wire  [7:0] uio_oe;
+    
+    wire spi_miso = uio_out[1];
+    wire spi_clk;
+    wire spi_cs;
+    wire spi_mosi;
+    
+    assign uio_in[2] = spi_clk;
+    assign uio_in[3] = spi_cs;
+    assign uio_in[0] = spi_mosi;
+    
     wire  [7:0] uio_combined;
     assign uio_in = uio_combined;
     

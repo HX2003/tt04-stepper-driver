@@ -11,63 +11,94 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
     input  wire       rst_n     // reset_n - low to reset
 );
 
-    wire reset = ! rst_n;
+    wire rst = !rst_n;
     
     // Dedicated outputs
     wire [3:0] motor_driver_out;
     assign uo_out[3:0] = motor_driver_out;
-    assign uo_out[7:4] = test_number_c[3:0] + test_number_c[31:28];
+    assign uo_out[7:4] = 4'b0000;//test_number_c[3:0] + test_number_c[31:28];
     // Dedicated inputs
     wire ext_ctrl = ui_in[0];
     
     // Bidirectional IO
-    wire io_step = uio_in[0];
+    wire spi_mosi = uio_in[0];
+    assign uio_out[0] = 1'b0;
+    assign uio_oe[0] = 1'b0;
+    
+    wire spi_miso;
+    assign uio_out[1] = spi_miso;
+    //Tri-state MISO when CS is high.  Allows for multiple slaves to talk.
+    assign uio_oe[1] = ~spi_cs;
+    
+    wire spi_clk = uio_in[2];
+    assign uio_out[2] = 1'b0;
+    assign uio_oe[2] = 1'b0;
+    
+    wire spi_cs = uio_in[3];
+    assign uio_out[3] = 1'b0;
+    assign uio_oe[3] = 1'b0;
+    
+    assign uio_out[5:4] = 2'b00;
+    assign uio_oe[5:4] = 2'b00;
+    
+    wire io_step = uio_in[6];
     wire io_step_rising;
     rising_edge_detector rising_edge_detector0(.in(io_step), .clk(clk), .out(io_step_rising));
-    wire io_dir = uio_in[1];
-    
-    assign uio_oe[7:2] = 6'b000000;
-    assign uio_oe[0] = ext_ctrl;
-    assign uio_oe[1] = ext_ctrl;
+    assign uio_out[6] = 1'b0;
+    assign uio_oe[6] = ext_ctrl;
+        
+    wire io_dir = uio_in[7];
+    assign uio_out[7] = 1'b0;
+    assign uio_oe[7] = ext_ctrl;
 
-    assign uio_out = 8'b00000000;
-
-    reg [31:0] step_pos;
+    //reg [31:0] step_pos;
     
     reg [31:0] counter;
     
-    reg [31:0] test_number_a;
-    reg [31:0] test_number_b;
-    wire [31:0] test_number_c;
-    reg start;
+    wire [31:0] cur_step_pos;
+    step_gen step_gen(.clk(clk), .rst(rst), .start(start), .cur_step_pos(cur_step_pos));
+
+    wire start;
+    assign start = counter[7];
     wire busy;
     
-    div32x32 div32x32(.clk(clk), .rst(reset), .dividend(test_number_a), .divisor(test_number_b), .ready(busy), .quotient(test_number_c), .start(start));
-    //mul mul(.clk(clk), .rst(reset), .in_a(test_number_a), .in_b(test_number_b), .out(test_number_c), .start(start), .busy(busy));
-    // if external inputs are set then use that as compare count
-    // otherwise use the hard coded MAX_COUNT
-    //wire [23:0] compare = ui_in == 0 ? MAX_COUNT: {16'b0, ui_in[7:0]};
+wire w_Slave_RX_DV, r_Slave_TX_DV;
+wire [7:0] w_Slave_RX_Byte, r_Slave_TX_Byte;
 
+spi_slave spi_slave
+(
+    // Control/Data Signals,
+    .i_Rst_L(rst_n),      // FPGA Reset Active Low
+    .i_Clk(clk),          // FPGA Clock
+    .o_RX_DV(w_Slave_RX_DV),      // Data Valid pulse (1 clock cycle)
+    .o_RX_Byte(w_Slave_RX_Byte),  // Byte received on MOSI
+    .i_TX_DV(w_Slave_RX_DV),      // Data Valid pulse
+    .i_TX_Byte(w_Slave_RX_Byte),  // Byte to serialize to MISO (set up for loopback)
+
+    // SPI Interface
+    .i_SPI_Clk(spi_clk),
+    .o_SPI_MISO(spi_miso),
+    .i_SPI_MOSI(spi_mosi),
+    .i_SPI_CS_n(spi_cs)
+ );
+   
     always @(posedge clk) begin
         // if reset, set counter to 0
-        if (reset) begin
-            step_pos <= 0;
-            start <= 0;
-            test_number_a <= 0;
-            test_number_b <= 0;
+        if (rst) begin
+            //start <= 0;
             counter <= 0;
             
         end else begin
-            if (io_step_rising)
-                step_pos <= step_pos + 1;
+            //if (io_step_rising)
+                //step_pos <= step_pos + 1;
                 
             counter <= counter + 1'b1;
             
             /*if (counter == 100) begin
-                test_number_a <= 7;
-                test_number_b <= 3;
+                test_number_a <= 248230948;
+                test_number_b <= 32412;
                 start <= 1;
-            end*/
+            end
             
             if (counter == 150) begin
                 start <= 0;
@@ -77,7 +108,7 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
                 test_number_a <= 200000;
                 test_number_b <= counter;
                 start <= 1;
-            end
+            end*/
             /*// if up to 16e6
             if (second_counter == compare) begin
                 // reset
@@ -96,6 +127,6 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
         end
     end
     
-    full_step_waveform_decoder full_step_waveform_decoder(.in(step_pos[1:0]), .out(motor_driver_out));
+    full_step_waveform_decoder full_step_waveform_decoder(.in(cur_step_pos[1:0]), .out(motor_driver_out));
 
 endmodule

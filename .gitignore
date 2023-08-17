@@ -4,6 +4,7 @@
 *.vcd
 runs
 tt
+out.svg
 src/gate_level_netlist.v
 src/sim_build
 src/__pycache__/
