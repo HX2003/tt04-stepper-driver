@@ -4,12 +4,15 @@ module rising_edge_detector(
     output wire out
 );
 
-   reg in_d;
+reg in_1;
+reg in_2;
    
-    always @(posedge clk) begin
-        in_d <= in;
-    end
+always @(posedge clk) begin
+    in_1 <= in;
+    in_2 <= in_1;
+end
 
-    assign out = in && !in_d;
+assign out = in_1 && !in_2;
+
 endmodule
 

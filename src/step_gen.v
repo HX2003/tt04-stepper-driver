@@ -2,7 +2,7 @@ module step_gen(
 input wire clk,
 input wire rst,
 input wire start,
-output reg [31:0] cur_step_pos
+inout wire cur_step_pos
 //output wire ready,
 );
 

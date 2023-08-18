@@ -55,20 +55,23 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
     
     reg [31:0] counter;
     
-    wire [31:0] cur_step_pos;
-    step_gen step_gen(.clk(clk), .rst(rst), .start(start), .cur_step_pos(cur_step_pos));
+    //step_gen step_gen(.clk(clk), .rst(rst), .start(start), .cur_step_pos(spi_reg_0));
 
     wire start;
     assign start = counter[7];
-    wire busy;
+    //wire busy;
 
-wire [31:0] spi_reg_0;
-wire [31:0] spi_reg_1;
-wire [31:0] spi_reg_2;
-wire [31:0] spi_reg_3;
+// SPI Registers
+reg [31:0] spi_reg_0; // cur_step_pos
+reg [31:0] spi_reg_1;
+reg [31:0] spi_reg_2;
+reg [31:0] spi_reg_3;
 
-wire w_Slave_RX_DV, r_Slave_TX_DV;
-wire [7:0] w_Slave_RX_Byte, r_Slave_TX_Byte;
+wire [31:0] spi_data_bits;
+wire [7:0] spi_address_bits;
+wire spi_rx;
+wire spi_rx_rising;
+rising_edge_detector rising_edge_detector_spi_rx(.in(spi_rx), .clk(clk), .out(spi_rx_rising));
 
 spi_slave spi_slave
 (
@@ -79,9 +82,10 @@ spi_slave spi_slave
     .spi_reg_1(spi_reg_1),
     .spi_reg_2(spi_reg_2),
     .spi_reg_3(spi_reg_3),
-    .o_RX_DV(w_Slave_RX_DV),      // Data Valid pulse (1 clock cycle)
-    .i_TX_DV(w_Slave_RX_DV),      // Data Valid pulse
-    .i_TX_Byte(w_Slave_RX_Byte),  // Byte to serialize to MISO (set up for loopback)
+    
+    .spi_address_bits(spi_address_bits),
+    .spi_data_bits(spi_data_bits),
+    .spi_rx(spi_rx),
 
     // SPI Interface
     .i_SPI_Clk(spi_clk),
@@ -95,20 +99,42 @@ spi_slave spi_slave
         if (rst) begin
             //start <= 0;
             counter <= 0;
-            
+            spi_reg_0 <= 0;
+            spi_reg_1 <= 0;
+            spi_reg_2 <= 0;
+            spi_reg_3 <= 0;
+           
         end else begin
             //if (io_step_rising)
                 //step_pos <= step_pos + 1;
                 
             counter <= counter + 1'b1;
             
-            /*if (counter == 100) begin
-                test_number_a <= 248230948;
-                test_number_b <= 32412;
-                start <= 1;
-            end
+            if (counter == 100) begin
+              spi_reg_0 <= 1;
+	      spi_reg_1 <= 2345678;
+	      spi_reg_2 <= 3456789;
+	      spi_reg_3 <= 4567890;
+	    end
+	    
+	    if (spi_rx_rising == 1) begin
+	        case(spi_address_bits[6:0])
+                    0: begin
+                        spi_reg_0 <= spi_data_bits; 
+                    end
+                    1: begin
+                        spi_reg_1 <= spi_data_bits;
+                    end
+                    2: begin
+                        spi_reg_2 <= spi_data_bits; 
+                    end
+                    3: begin
+                        spi_reg_3 <= spi_data_bits; 
+                    end
+                endcase
+	    end
             
-            if (counter == 150) begin
+            /*if (counter == 150) begin
                 start <= 0;
             end
             
@@ -135,6 +161,6 @@ spi_slave spi_slave
         end
     end
     
-    full_step_waveform_decoder full_step_waveform_decoder(.in(cur_step_pos[1:0]), .out(motor_driver_out));
+    full_step_waveform_decoder full_step_waveform_decoder(.in(spi_reg_0[1:0]), .out(motor_driver_out));
 
 endmodule

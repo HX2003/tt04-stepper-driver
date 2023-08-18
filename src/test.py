@@ -46,11 +46,99 @@ async def test_7seg(dut):
     #dut.tt_um_stepper_driver.test_number_b.value = 32412
     #dut.tt_um_stepper_driver.start.value = 1
     
-    await ClockCycles(dut.clk, 36)
-    spi_reg_addr = 56;
-    spi_write_data = 2815324;
-    spi_frame = spi_reg_addr << 32 or spi_write_data;
-    spi_master.write_nowait([spi_frame])
+    await ClockCycles(dut.clk, 200)
+    spi_reg_addr = 0 | 0 << 7;
+    spi_write_data = 0;
+    spi_frame = spi_reg_addr << 32 | spi_write_data;
+    await spi_master.write([spi_frame])
+    read_bytes = await spi_master.read()
+    print(f"Value: {read_bytes[0] & 0xFFFFFFFF}")
+    
+    await ClockCycles(dut.clk, 200)
+    spi_reg_addr = 1 | 0 << 7;
+    spi_write_data = 0;
+    spi_frame = spi_reg_addr << 32 | spi_write_data;
+    await spi_master.write([spi_frame])
+    read_bytes = await spi_master.read()
+    print(f"Value: {read_bytes[0] & 0xFFFFFFFF}")
+    
+    await ClockCycles(dut.clk, 200)
+    spi_reg_addr = 2 | 0 << 7;
+    spi_write_data = 0;
+    spi_frame = spi_reg_addr << 32 | spi_write_data;
+    await spi_master.write([spi_frame])
+    read_bytes = await spi_master.read()
+    print(f"Value: {read_bytes[0] & 0xFFFFFFFF}")
+    
+    await ClockCycles(dut.clk, 200)
+    spi_reg_addr = 3 | 0 << 7;
+    spi_write_data = 0;
+    spi_frame = spi_reg_addr << 32 | spi_write_data;
+    await spi_master.write([spi_frame])
+    read_bytes = await spi_master.read()
+    print(f"Value: {read_bytes[0] & 0xFFFFFFFF}")
+    
+    # Write test
+    await ClockCycles(dut.clk, 200)
+    spi_reg_addr = 0 | 1 << 7;
+    spi_write_data = 9999;
+    spi_frame = spi_reg_addr << 32 | spi_write_data;
+    await spi_master.write([spi_frame])
+    await spi_master.read()
+    
+    await ClockCycles(dut.clk, 200)
+    spi_reg_addr = 1 | 1 << 7;
+    spi_write_data = 88888;
+    spi_frame = spi_reg_addr << 32 | spi_write_data;
+    await spi_master.write([spi_frame])
+    await spi_master.read()
+    
+    await ClockCycles(dut.clk, 200)
+    spi_reg_addr = 2 | 1 << 7;
+    spi_write_data = 777777;
+    spi_frame = spi_reg_addr << 32 | spi_write_data;
+    await spi_master.write([spi_frame])
+    await spi_master.read()
+    
+    await ClockCycles(dut.clk, 200)
+    spi_reg_addr = 3 | 1 << 7;
+    spi_write_data = 6666666;
+    spi_frame = spi_reg_addr << 32 | spi_write_data;
+    await spi_master.write([spi_frame])
+    await spi_master.read()
+    
+    # Read test after writing
+    await ClockCycles(dut.clk, 200)
+    spi_reg_addr = 0 | 0 << 7;
+    spi_write_data = 0;
+    spi_frame = spi_reg_addr << 32 | spi_write_data;
+    await spi_master.write([spi_frame])
+    read_bytes = await spi_master.read()
+    print(f"Value: {read_bytes[0] & 0xFFFFFFFF}")
+    
+    await ClockCycles(dut.clk, 200)
+    spi_reg_addr = 1 | 0 << 7;
+    spi_write_data = 0;
+    spi_frame = spi_reg_addr << 32 | spi_write_data;
+    await spi_master.write([spi_frame])
+    read_bytes = await spi_master.read()
+    print(f"Value: {read_bytes[0] & 0xFFFFFFFF}")
+    
+    await ClockCycles(dut.clk, 200)
+    spi_reg_addr = 2 | 0 << 7;
+    spi_write_data = 0;
+    spi_frame = spi_reg_addr << 32 | spi_write_data;
+    await spi_master.write([spi_frame])
+    read_bytes = await spi_master.read()
+    print(f"Value: {read_bytes[0] & 0xFFFFFFFF}")
+    
+    await ClockCycles(dut.clk, 200)
+    spi_reg_addr = 3 | 0 << 7;
+    spi_write_data = 0;
+    spi_frame = spi_reg_addr << 32 | spi_write_data;
+    await spi_master.write([spi_frame])
+    read_bytes = await spi_master.read()
+    print(f"Value: {read_bytes[0] & 0xFFFFFFFF}")
     
     #assert int(dut.tt_um_stepper_driver.test_number_c.value) == 7658
     max_count = dut.ui_in.value
