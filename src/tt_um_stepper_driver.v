@@ -1,4 +1,5 @@
 `default_nettype none
+`include "step_gen.v"
 
 module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
     input  wire [7:0] ui_in,    // Dedicated inputs - connected to the input switches
@@ -54,16 +55,30 @@ module tt_um_stepper_driver #( parameter MAX_COUNT = 24'd10_000_000 ) (
     //reg [31:0] step_pos;
     
     reg [31:0] counter;
+    wire signed [15:0] out_cur_velocity;
+    wire signed [31:0] out_cur_step_cos;
     
-    //step_gen step_gen(.clk(clk), .rst(rst), .start(start), .cur_step_pos(spi_reg_0));
-
-    wire start;
-    assign start = counter[7];
-    //wire busy;
+    reg start;
+    wire [2:0] state;
+    
+step_gen step_gen(
+    .clk(clk),
+    .rst(rst),
+    .start(start),
+    .state(state),
+    .in_start_velocity(spi_reg_1[15:0]),
+    .in_end_velocity(spi_reg_1[31:16]),
+    .in_cur_time(spi_reg_2[15:0]),
+    .in_time_interval(spi_reg_2[31:16]),
+    .in_start_step_pos(spi_reg_0),
+    .out_cur_velocity(out_cur_velocity),
+    .out_cur_step_cos(out_cur_step_cos)
+);
+     
 
 // SPI Registers
 reg [31:0] spi_reg_0; // cur_step_pos
-reg [31:0] spi_reg_1;
+reg [31:0] spi_reg_1; //
 reg [31:0] spi_reg_2;
 reg [31:0] spi_reg_3;
 
@@ -97,7 +112,7 @@ spi_slave spi_slave
     always @(posedge clk) begin
         // if reset, set counter to 0
         if (rst) begin
-            //start <= 0;
+            start <= 0;
             counter <= 0;
             spi_reg_0 <= 0;
             spi_reg_1 <= 0;
@@ -127,6 +142,7 @@ spi_slave spi_slave
                     end
                     2: begin
                         spi_reg_2 <= spi_data_bits; 
+                        start <= 1;
                     end
                     3: begin
                         spi_reg_3 <= spi_data_bits; 
@@ -134,6 +150,10 @@ spi_slave spi_slave
                 endcase
 	    end
             
+            if (state == `step_gen_CALC_COMPLETE) begin
+                start <= 0;
+                spi_reg_3 <= out_cur_velocity; 
+            end
             /*if (counter == 150) begin
                 start <= 0;
             end

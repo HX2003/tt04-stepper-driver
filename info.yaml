@@ -7,9 +7,9 @@ project:
 # Source files must be in ./src and you must list each source file separately
   source_files:        
     - tt_um_stepper_driver.v
-    - mul.v
     - spi_slave.v
     - step_gen.v
+    - mul16x16.v
     - div32x32.v
     - rising_edge_detector.v
     - falling_edge_detector.v
@@ -17,7 +17,7 @@ project:
   top_module:  "tt_um_stepper_driver"      # put the name of your top module here, make it unique by prepending your github username
 
 # How many tiles your design occupies? A single tile is about 167x108 uM.
-  tiles: "1x2"    # Valid values: 1x1, 1x2, 2x2, 4x2 or 8x2
+  tiles: "2x2"    # Valid values: 1x1, 1x2, 2x2, 4x2 or 8x2
 
 # Keep a track of the submission yaml
 yaml_version: 4

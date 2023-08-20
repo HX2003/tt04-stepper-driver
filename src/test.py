@@ -3,9 +3,26 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, FallingEdge, Timer, ClockCycles
 from cocotb.handle import Force
 from cocotbext.spi import SpiMaster, SpiSignals, SpiConfig
+import numpy as np
  
 clock_frequency = 100
+
+def to_twos_complement(value):        
+    bit_width = np.dtype(type(value)).itemsize * 8
     
+    if(value < 0):
+        return value + (1 << bit_width)
+    else:
+        return value
+
+def from_twos_complement(value, type):
+    bit_width = np.dtype(type(value)).itemsize * 8
+    
+    if(value & (1 << (bit_width - 1))):
+        return type(value - (1 << bit_width))
+    else:
+        return type(value)
+        
 @cocotb.test()
 async def test_7seg(dut):
     dut._log.info("start")
@@ -79,28 +96,41 @@ async def test_7seg(dut):
     print(f"Value: {read_bytes[0] & 0xFFFFFFFF}")
     
     # Write test
+    start_velocity = np.int16(-24000)
+    end_velocity = np.int16(12000)
+    cur_time = np.uint16(1234)
+    time_interval = np.uint16(12345)
+    
     await ClockCycles(dut.clk, 200)
     spi_reg_addr = 0 | 1 << 7;
-    spi_write_data = 9999;
+    spi_write_data = to_twos_complement(np.int32(9999))
     spi_frame = spi_reg_addr << 32 | spi_write_data;
     await spi_master.write([spi_frame])
     await spi_master.read()
     
     await ClockCycles(dut.clk, 200)
     spi_reg_addr = 1 | 1 << 7;
-    spi_write_data = 88888;
+    spi_write_data = to_twos_complement(start_velocity) | (to_twos_complement(end_velocity) << 16)
     spi_frame = spi_reg_addr << 32 | spi_write_data;
     await spi_master.write([spi_frame])
     await spi_master.read()
     
     await ClockCycles(dut.clk, 200)
     spi_reg_addr = 2 | 1 << 7;
-    spi_write_data = 777777;
+    spi_write_data = cur_time | time_interval << 16;
     spi_frame = spi_reg_addr << 32 | spi_write_data;
     await spi_master.write([spi_frame])
     await spi_master.read()
     
     await ClockCycles(dut.clk, 200)
+    spi_reg_addr = 3 | 0 << 7;
+    spi_write_data = 0;
+    spi_frame = spi_reg_addr << 32 | spi_write_data;
+    await spi_master.write([spi_frame])
+    read_bytes = await spi_master.read()
+    print(f"Stepgen value: {from_twos_complement(read_bytes[0] & 0xFFFFFFFF, np.int32)}")
+
+    '''await ClockCycles(dut.clk, 200)
     spi_reg_addr = 3 | 1 << 7;
     spi_write_data = 6666666;
     spi_frame = spi_reg_addr << 32 | spi_write_data;
@@ -139,7 +169,7 @@ async def test_7seg(dut):
     await spi_master.write([spi_frame])
     read_bytes = await spi_master.read()
     print(f"Value: {read_bytes[0] & 0xFFFFFFFF}")
-    
+    '''
     #assert int(dut.tt_um_stepper_driver.test_number_c.value) == 7658
     max_count = dut.ui_in.value
     dut._log.info(f"check all segments with MAX_COUNT set to {max_count}")
